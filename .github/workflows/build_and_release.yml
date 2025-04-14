@@ -27,7 +27,7 @@ jobs:
 
     - name: Build assignment1 (C++)
       run: |
-        g++ -std=c++17 -Iassignment1/eigen-3.4.0 assignment1/matrix/matrix.cpp -o build/assignment1/matrix.out
+        g++ -std=c++17 -Iassignment1/eigen-3.4.0 assignment1/matrix.cpp -o build/assignment1/matrix.out
 
     - name: Build assignment2 (C++ and Kotlin)
       run: |
