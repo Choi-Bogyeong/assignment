@@ -16,10 +16,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install dependencies (JDK + Kotlin)
+    - name: Install dependencies (JDK + Kotlin + .NET)
       run: |
         sudo apt-get update
-        sudo apt-get install -y default-jdk zip
+        sudo apt-get install -y default-jdk zip dotnet-sdk-7.0
+
         curl -s https://get.sdkman.io | bash
         source "$HOME/.sdkman/bin/sdkman-init.sh"
         sdk install kotlin
@@ -31,19 +32,28 @@ jobs:
       run: |
         g++ -std=c++17 -Iassignment1/eigen-3.4.0 assignment1/eigen1.cpp -o build/assignment1/matrix.out
 
-    - name: Build assignment2 (C++ and Kotlin)
+    - name: Build assignment2 (C++ / Kotlin / C#)
       run: |
-        for dir in "adapter" "decorator" "factory method" "method_chain" "pasad"; do
-          cpp="assignment2/$dir/${dir// /_}.cpp"
-          kt="assignment2/$dir/${dir// /_}.kt"
-
-          if [ -f "$cpp" ]; then
-            g++ -std=c++17 "$cpp" -o build/assignment2/${dir// /_}_cpp.out
-          fi
-
-          if [ -f "$kt" ]; then
-            kotlinc "$kt" -include-runtime -d build/assignment2/${dir// /_}_kt.jar
-          fi
+        for dir in "adaptor" "decorator" "factory method" "method_chain" "pasad"; do
+          for file in assignment2/$dir/*; do
+            case "$file" in
+              *.cpp)
+                g++ -std=c++17 "$file" -o build/assignment2/$(basename "$file" .cpp)_cpp.out
+                ;;
+              *.kt)
+                kotlinc "$file" -include-runtime -d build/assignment2/$(basename "$file" .kt)_kt.jar
+                ;;
+              *.cs)
+                dotnet new console -o temp_cs_project --force > /dev/null
+                cp "$file" temp_cs_project/Program.cs
+                pushd temp_cs_project
+                dotnet build -c Release > /dev/null
+                cp bin/Release/net*/temp_cs_project.dll ../build/assignment2/$(basename "$file" .cs)_cs.dll
+                popd
+                rm -rf temp_cs_project
+                ;;
+            esac
+          done
         done
 
     - name: Zip all build outputs
