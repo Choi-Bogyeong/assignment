@@ -12,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -61,11 +62,17 @@ jobs:
         cd build
         zip -r assignments.zip .
 
+    - name: Zip full repository (excluding .git and build folder)
+      run: |
+        zip -r source.zip . -x "*.git*" "build/*"
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v1.0.${{ github.run_number }}
         name: Release v1.0.${{ github.run_number }}
-        files: build/assignments.zip
+        files: |
+          build/assignments.zip
+          source.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
