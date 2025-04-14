@@ -1,0 +1,59 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install dependencies (JDK + Kotlin)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-jdk zip
+        curl -s https://get.sdkman.io | bash
+        source "$HOME/.sdkman/bin/sdkman-init.sh"
+        sdk install kotlin
+
+    - name: Create build folder
+      run: mkdir -p build/assignment1 build/assignment2
+
+    - name: Build assignment1 (C++)
+      run: |
+        g++ -std=c++17 -Iassignment1/eigen-3.4.0 assignment1/matrix/matrix.cpp -o build/assignment1/matrix.out
+
+    - name: Build assignment2 (C++ and Kotlin)
+      run: |
+        for dir in "adapter" "decorator" "factory method" "method_chain" "pasad"; do
+          cpp="assignment2/$dir/${dir// /_}.cpp"
+          kt="assignment2/$dir/${dir// /_}.kt"
+
+          if [ -f "$cpp" ]; then
+            g++ -std=c++17 "$cpp" -o build/assignment2/${dir// /_}_cpp.out
+          fi
+
+          if [ -f "$kt" ]; then
+            kotlinc "$kt" -include-runtime -d build/assignment2/${dir// /_}_kt.jar
+          fi
+        done
+
+    - name: Zip all build outputs
+      run: |
+        cd build
+        zip -r assignments.zip .
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        files: build/assignments.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
